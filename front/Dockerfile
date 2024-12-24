@@ -1,11 +1,12 @@
 FROM node:22 AS dependencies
-WORKDIR /client
-COPY package.json package-lock.json /app/
-RUN npm clean-install
+WORKDIR /client/
+COPY package.json package-lock.json ./
+RUN npm ci
+
 
 FROM node:22 AS base
 WORKDIR /client
-COPY --from=dependencies /app/node_modules ./node_modules
+COPY --from=dependencies /client/node_modules ./node_modules
 COPY . .
 
 FROM base AS development
@@ -18,5 +19,5 @@ FROM build AS production
 COPY --from=base /client/node_modules ./node_modules
 COPY --from=build /client/dist ./dist
 RUN npm install -g serve
-EXPOSE 3000
-CMD ["serve", "-s", "dist", "-l", "3000"]
+EXPOSE 5173
+CMD ["serve", "-s", "dist", "-l", "5173"]
