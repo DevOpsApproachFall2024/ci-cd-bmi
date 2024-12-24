@@ -80,7 +80,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}-back
+          images: ${{ env.REGISTRY }}/${{ github.repository }}-backend
           tags: |
             type=schedule
             type=semver,pattern={{version}}
@@ -97,6 +97,6 @@ jobs:
       - name: Build
         uses: docker/build-push-action@v2
         with:
-          context: ./back
+          context: ./backend
           push: true
           tags: ${{ steps.meta.outputs.tags }}
