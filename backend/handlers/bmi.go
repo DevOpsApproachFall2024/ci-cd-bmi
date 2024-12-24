@@ -3,6 +3,7 @@ package handlers
 import (
     "encoding/json"
     "net/http"
+    "strconv"
 )
 
 type BMIRequest struct {
@@ -16,23 +17,41 @@ type BMIResponse struct {
 }
 
 func CalculateBMI(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPost {
-        http.Error(w, "Only POST method is  allowed", http.StatusMethodNotAllowed)
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Methods", "GET")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+
+    if r.Method != http.MethodGet {
+        http.Error(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
         return
     }
 
-    var req BMIRequest
-    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        http.Error(w, "Invalid JSON body", http.StatusBadRequest)
+    // Extract height and weight from query parameters
+    heightStr := r.URL.Query().Get("height")
+    weightStr := r.URL.Query().Get("weight")
+
+    // Check if both height and weight are provided
+    if heightStr == "" || weightStr == "" {
+        http.Error(w, "Height and Weight parameters are required", http.StatusBadRequest)
         return
     }
 
-    if req.Height <= 0 || req.Weight <= 0 {
-        http.Error(w, "Height and Weight must be positive numbers", http.StatusBadRequest)
+    // Convert height and weight to float64
+    height, err := strconv.ParseFloat(heightStr, 64)
+    if err != nil || height <= 0 {
+        http.Error(w, "Invalid or non-positive height", http.StatusBadRequest)
         return
     }
 
-    bmi := req.Weight / (req.Height * req.Height)
+    weight, err := strconv.ParseFloat(weightStr, 64)
+    if err != nil || weight <= 0 {
+        http.Error(w, "Invalid or non-positive weight", http.StatusBadRequest)
+        return
+    }
+
+    // Calculate BMI
+    bmi := weight / (height * height)
     status := ""
     switch {
     case bmi < 18.5:
@@ -45,6 +64,7 @@ func CalculateBMI(w http.ResponseWriter, r *http.Request) {
         status = "Obese"
     }
 
+    // Respond with the BMI and status
     res := BMIResponse{
         BMI:    bmi,
         Status: status,
